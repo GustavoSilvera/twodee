@@ -1,39 +1,28 @@
-use crate::hit;
 use crate::math;
 use crate::ray;
+use crate::shape;
 
-use hit::Hit;
-use hit::Hittable;
 use math::Vec2;
 use ray::Ray;
-
-struct Shape {
-    posn: Vec2,
-    radius: f64,
-}
-
-impl Shape {
-    pub fn new(pos: Vec2, rad: f64) -> Shape {
-        Shape {
-            posn: pos,
-            radius: rad,
-        }
-    }
-    pub fn intersects(&self, pos: Vec2) -> bool {
-        (pos - self.posn).length2() <= self.radius * self.radius
-    }
-}
-
-impl Hittable for Shape {
-    fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Hit> {
-        // TODO
-        None
-    }
-}
+use shape::Circle;
+use shape::Line;
+use shape::Shape;
+use shape::ShapeOps;
 
 fn world() -> Vec<Shape> {
     let mut world: Vec<Shape> = Vec::new();
-    world.push(Shape::new(Vec2::new(400.0, 300.0), 100.0));
+    world.push(Shape::Circle(Circle::new(Vec2::new(400.0, 300.0), 100.0)));
+
+    let w0 = 10.0;
+    let h0 = 10.0;
+    let w1 = 800.0 - w0;
+    let h1 = 600.0 - h0;
+
+    // add walls
+    world.push(Shape::Line(Line::new(Vec2::new(w0, h0), Vec2::new(w0, h1)))); //   Left wall
+    world.push(Shape::Line(Line::new(Vec2::new(w0, h0), Vec2::new(w1, h0)))); //    Top wall
+    world.push(Shape::Line(Line::new(Vec2::new(w1, h1), Vec2::new(w1, h0)))); //  Right wall
+    world.push(Shape::Line(Line::new(Vec2::new(w1, h1), Vec2::new(w0, h1)))); // Bottom wall
 
     world
 }
@@ -41,7 +30,7 @@ fn world() -> Vec<Shape> {
 /// TODO: use sRGB type
 fn ray_query((x, y): (f64, f64), world: &Vec<Shape>) -> [f64; 3] {
     for shape in world {
-        if shape.intersects(Vec2::new(x, y)) {
+        if shape.is_on_surface(Vec2::new(x, y)) {
             return [1.0, 0.0, 0.0];
         }
     }

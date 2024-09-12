@@ -2,6 +2,7 @@ mod hit;
 mod math;
 mod ray;
 mod render;
+mod shape;
 mod utils;
 
 fn main() {
