@@ -1,4 +1,6 @@
+mod hit;
 mod math;
+mod ray;
 mod render;
 mod utils;
 
