@@ -32,6 +32,10 @@ impl Vec2 {
     pub fn perp(&self) -> Vec2 {
         Vec2::new(self.y, self.x)
     }
+
+    pub fn cross2(&self, other: Vec2) -> f64 {
+        self.x * other.y - self.y * other.x
+    }
 }
 
 impl Add<Vec2> for Vec2 {

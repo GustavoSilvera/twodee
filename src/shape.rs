@@ -89,6 +89,7 @@ impl ShapeOps for Circle {
 
 impl Hittable for Circle {
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Hit> {
+        // https://www.bluebill.net/circle_ray_intersection.html
         let u = self.center - ray.o;
         let u1 = ray.d * u.dot(ray.d);
         let u2 = u - u1;
@@ -129,6 +130,13 @@ impl Line {
     pub fn new(p1: Vec2, p2: Vec2) -> Line {
         Line { a: p1, b: p2 }
     }
+
+    fn get_normals(&self, _pos: Vec2) -> (Vec2, Vec2) {
+        (
+            (self.a - self.b).perp().normalized(),
+            (self.b - self.a).perp().normalized(),
+        )
+    }
 }
 
 impl ShapeOps for Line {
@@ -149,7 +157,8 @@ impl ShapeOps for Line {
         }
 
         let o = pos;
-        let n = (self.a - self.b).perp().normalized(); // TODO: try both ends
+        let (n1, _n2) = self.get_normals(pos);
+        let n = n1; // TODO: try both normals
 
         Some(Ray::new(o, n))
     }
@@ -157,7 +166,42 @@ impl ShapeOps for Line {
 
 impl Hittable for Line {
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Hit> {
-        // TODO
+        // https://stackoverflow.com/a/565282
+        // TODO: check vector lengths and normalizations?
+        let p = self.a;
+        let q = ray.o;
+        let r = self.b - self.a;
+        let s = ray.d;
+        let rxs = r.cross2(s);
+        if rxs == 0.0 {
+            // two lines are collinear
+            // todo consider two lines overlappinf or disjoint
+            return None;
+        }
+        let t = (q - p).cross2(s) / rxs;
+        let u = (q - p).cross2(r) / rxs;
+
+        let opposite_dir = s.dot(r) < 0.0;
+        let bounds01 = if opposite_dir { 1.0..0.0 } else { 0.0..1.0 };
+        let raybounds = if opposite_dir {
+            t_max..t_min
+        } else {
+            t_min..t_max
+        };
+
+        if bounds01.contains(&t) && raybounds.contains(&u) {
+            // lines connect at p + tr == q + us
+            let pos = ray.at(u);
+            let (n1, n2) = self.get_normals(pos);
+            // use the normal opposite direction of incoming ray
+            let n = if n1.dot(ray.d) < 0.0 { n1 } else { n2 };
+            return Some(Hit {
+                t: u,
+                pos: pos,
+                normal: n,
+            });
+        }
+
         None
     }
 }
