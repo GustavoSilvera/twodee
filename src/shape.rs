@@ -89,7 +89,33 @@ impl ShapeOps for Circle {
 
 impl Hittable for Circle {
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Hit> {
-        // TODO
+        let u = self.center - ray.o;
+        let u1 = ray.d * u.dot(ray.d);
+        let u2 = u - u1;
+        let d = u2.length();
+        if d < self.radius {
+            // 2 intersections
+            let m = (self.radius * self.radius - d * d).sqrt();
+            // let p1 = ray.o + u1 + m * ray.d; // further
+            let p2 = ray.o + u1 - ray.d * m;
+            let n = (p2 - self.center).normalized();
+            let t = (p2 - ray.o).length();
+            return Some(Hit {
+                t: t,
+                pos: p2,
+                normal: n,
+            });
+        } else if d == self.radius {
+            let p = ray.o + u1;
+            let n = (p - self.center).normalized();
+            let t = u1.length();
+            return Some(Hit {
+                t: t,
+                pos: p,
+                normal: n,
+            });
+        }
+        // no intersection
         None
     }
 }

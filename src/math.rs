@@ -28,6 +28,10 @@ impl Vec2 {
     pub fn dot(&self, other: Vec2) -> f64 {
         (self.x * other.x) + (self.y * other.y)
     }
+
+    pub fn perp(&self) -> Vec2 {
+        Vec2::new(self.y, self.x)
+    }
 }
 
 impl Add<Vec2> for Vec2 {
