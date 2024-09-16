@@ -15,6 +15,7 @@ pub enum Shape {
 pub trait ShapeOps {
     fn intersects(&self, pos: Vec2) -> bool;
     fn is_on_surface(&self, pos: Vec2) -> bool;
+    fn surface_ray(&self, pos: Vec2) -> Option<Ray>;
 }
 
 impl ShapeOps for Shape {
@@ -30,17 +31,32 @@ impl ShapeOps for Shape {
             Shape::Line(l) => l.is_on_surface(pos),
         }
     }
+    fn surface_ray(&self, pos: Vec2) -> Option<Ray> {
+        match self {
+            Shape::Circle(c) => c.surface_ray(pos),
+            Shape::Line(l) => l.surface_ray(pos),
+        }
+    }
+}
+
+impl Hittable for Shape {
+    fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<Hit> {
+        match self {
+            Shape::Circle(c) => c.hit(ray, t_min, t_max),
+            Shape::Line(l) => l.hit(ray, t_min, t_max),
+        }
+    }
 }
 
 pub struct Circle {
-    posn: Vec2,
+    center: Vec2,
     radius: f64,
 }
 
 impl Circle {
     pub fn new(pos: Vec2, rad: f64) -> Circle {
         Circle {
-            posn: pos,
+            center: pos,
             radius: rad,
         }
     }
@@ -48,15 +64,26 @@ impl Circle {
 
 impl ShapeOps for Circle {
     fn intersects(&self, pos: Vec2) -> bool {
-        (pos - self.posn).length2() < self.radius * self.radius
+        (pos - self.center).length2() < self.radius * self.radius
     }
 
     fn is_on_surface(&self, pos: Vec2) -> bool {
-        let d2 = (pos - self.posn).length2();
+        let d2 = (pos - self.center).length2();
         let r2 = self.radius * self.radius;
         let eps = d2 * 0.01;
 
         d2 - eps < r2 && d2 + eps > r2
+    }
+
+    fn surface_ray(&self, pos: Vec2) -> Option<Ray> {
+        if !self.is_on_surface(pos) {
+            return None;
+        }
+
+        let o = pos;
+        let n = (pos - self.center).normalized();
+
+        Some(Ray { o: o, d: n })
     }
 }
 
@@ -77,6 +104,7 @@ impl Line {
         Line { a: p1, b: p2 }
     }
 }
+
 impl ShapeOps for Line {
     fn intersects(&self, pos: Vec2) -> bool {
         let d1 = (pos - self.a).length();
@@ -87,6 +115,17 @@ impl ShapeOps for Line {
 
     fn is_on_surface(&self, pos: Vec2) -> bool {
         self.intersects(pos)
+    }
+
+    fn surface_ray(&self, pos: Vec2) -> Option<Ray> {
+        if !self.is_on_surface(pos) {
+            return None;
+        }
+
+        let o = pos;
+        let n = (self.a - self.b).perp().normalized(); // TODO: try both ends
+
+        Some(Ray::new(o, n))
     }
 }
 

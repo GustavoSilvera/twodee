@@ -1,7 +1,10 @@
+use crate::hit;
 use crate::math;
 use crate::ray;
 use crate::shape;
 
+use hit::Hit;
+use hit::Hittable;
 use math::Vec2;
 use ray::Ray;
 use shape::Circle;
@@ -27,11 +30,43 @@ fn world() -> Vec<Shape> {
     world
 }
 
+fn hit_world(world: &Vec<Shape>, r: &Ray, t_min: f64, t_max: f64) -> Option<Hit> {
+    let mut closest = t_max;
+    let mut ret = None;
+    for shape in world {
+        if let Some(hit) = shape.hit(r, t_min, closest) {
+            closest = hit.t;
+            ret = Some(hit);
+        }
+    }
+    ret
+}
+
+fn ray_color(ray: &Ray, world: &Vec<Shape>, depth: i32) -> [f64; 3] {
+    if depth <= 0 {
+        return [0.0, 0.0, 0.0];
+    }
+    let hit = hit_world(world, ray, 0.001, std::f64::MAX);
+    match hit {
+        Some(hit) => {
+            let scattered_ray = Ray::new(hit.pos, hit.normal);
+            let _target_col = ray_color(&scattered_ray, world, depth - 1);
+            return [1.0, 0.0, 0.0];
+        }
+        None => {
+            return [0.0, 0.0, 0.0];
+        }
+    }
+}
+
 /// TODO: use sRGB type
 fn ray_query((x, y): (f64, f64), world: &Vec<Shape>) -> [f64; 3] {
+    let bounces = 2;
     for shape in world {
-        if shape.is_on_surface(Vec2::new(x, y)) {
-            return [1.0, 0.0, 0.0];
+        let r_opt = shape.surface_ray(Vec2::new(x, y));
+        if !r_opt.is_none() {
+            let r = r_opt.unwrap();
+            return ray_color(&r, &world, bounces);
         }
     }
     [0.0, 0.0, 0.0]
