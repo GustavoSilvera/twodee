@@ -79,10 +79,10 @@ impl Line {
 }
 impl ShapeOps for Line {
     fn intersects(&self, pos: Vec2) -> bool {
-        let vec = self.a - self.b;
-        let pvec = pos - self.b;
+        let d1 = (pos - self.a).length();
+        let d2 = (pos - self.b).length();
 
-        vec.dot(pvec) < 0.99
+        d1 + d2 == (self.a - self.b).length()
     }
 
     fn is_on_surface(&self, pos: Vec2) -> bool {
